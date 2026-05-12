@@ -1,0 +1,11 @@
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
+create_async_engine：连数据库
+AsyncSession：操作数据库
+sessionmaker：造会话的工厂
+declarative_base：建表基类
+--------------------------------------------------------------------------------------
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+engine：绑定数据库引擎
+class_=AsyncSession：生成异步会话
+expire_on_commit=False：提交后不刷新、不过期，提升性能避坑

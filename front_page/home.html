@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 面试私教助手</title>
+</head>
+<link rel="stylesheet" href="./Css/home_css.css">
+<body>
+    <nav class="sidebar">
+        <div class="logo">
+            <span style="font-size: 24px;">✨</span> AI 智面
+        </div>
+        <div class="nav-item active" data-target="dashboard">学习大盘</div>
+        <div class="nav-item" data-target="interview">模拟面试大厅</div>
+        <div class="nav-item" data-target="report">我的复盘账单</div>
+        <div class="nav-item" data-target="mistakes">专属错题本</div>
+        <div class="nav-item" data-target="profile" style="margin-top: auto;">个人中心</div>
+    </nav>
+
+    <main class="main-content">
+
+        <header class="header">
+            <h1 id="page-title">学习大盘</h1>
+            <div class="user-profile">
+                <span style="font-size: 14px; color: var(--text-muted);">准备秋招中</span>
+                <div class="avatar">Me</div>
+            </div>
+        </header>
+
+        <section id="dashboard" class="view-section active">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-title">累计面试场次</div>
+                    <div class="card-value">12 <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">场</span></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">历史平均得分</div>
+                    <div class="card-value" style="color: #4CAF50;">85.5 <span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">分</span></div>
+                </div>
+                <div class="card action-card" onclick="document.querySelector('[data-target=\'interview\']').click()">
+                    <div class="card-title" style="margin-bottom: 5px;">准备好了吗？</div>
+                    <div class="card-value" style="font-size: 22px;">+ 发起新面试</div>
+                </div>
+            </div>
+
+            <div class="card" style="min-height: 300px;">
+                <div class="card-title" style="font-size: 16px; font-weight: 600; color: var(--text-main);">📌 最新大厂题库推荐</div>
+                <ul style="margin-top: 15px; padding-left: 20px; color: var(--text-muted); line-height: 2;">
+                    <li>字节跳动后端开发面经（2026届最新）</li>
+                    <li>FastAPI 底层路由原理解析与实战</li>
+                    <li>MySQL 索引失效的 8 种场景（常考）</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="interview" class="view-section">
+            <div class="card">
+                <h2>创建面试场次配置</h2>
+                <p style="margin-top: 10px; color: var(--text-muted);">这里将放置下拉框、复选框和简历上传组件，配置完成后即可呼出 Dify Chatflow 聊天界面。</p>
+            </div>
+        </section>
+
+        <section id="report" class="view-section">
+            <div class="card"><h2>我的复盘账单</h2><p style="margin-top: 10px; color: var(--text-muted);">这里将用 ECharts 渲染能力雷达图和扣分明细。</p></div>
+        </section>
+
+        <section id="mistakes" class="view-section">
+            <div class="card"><h2>专属错题本</h2><p style="margin-top: 10px; color: var(--text-muted);">错题列表和单点突破的聊天入口。</p></div>
+        </section>
+
+        <section id="profile" class="view-section">
+            <div class="card"><h2>个人中心</h2><p style="margin-top: 10px; color: var(--text-muted);">管理简历解析数据和底层提示词注入信息。</p></div>
+        </section>
+    </main>
+</body>
+<script src="./Js/home_js.js"></script>
+</html>
