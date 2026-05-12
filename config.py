@@ -18,6 +18,17 @@ class Settings(BaseSettings):
     # 数据库配置
     DATABASE_URL: str = ""
 
+    # ==========================================
+    # Dify 智能体配置区
+    # ==========================================
+    DIFY_BASE_URL: str = "https://api.dify.ai/v1"
+
+    # 1. 知识库问答/总结智能体 API Key (你原有的)
+    DIFY_API_KEY: str = "app-EM9xuEOnLhDw9wOMq5sEqHbc"
+
+    # 2. 用户反馈打标工作流 API Key (新加的)
+    DIFY_FEEDBACK_API_KEY: str = "app-wuplxu6kiTfIsqptnu3hZ4i7"
+
     class Config:
         env_file = os.path.join(os.path.dirname(__file__), "app", ".env")
         env_file_encoding = "utf-8"
@@ -26,5 +37,7 @@ class Settings(BaseSettings):
 # 实例化配置对象，方便其他模块引入
 settings = Settings()
 
-# 兼容旧代码，提供 DATABASE_URL 变量
+# 兼容旧代码，提供全局变量供外部直接导入 (比如原先的 ai_service.py)
 DATABASE_URL = settings.DATABASE_URL
+DIFY_BASE_URL = settings.DIFY_BASE_URL
+DIFY_API_KEY = settings.DIFY_API_KEY

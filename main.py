@@ -7,6 +7,8 @@ from config import DATABASE_URL
 from app.utils.response import success, error, error_response
 from app.api import auth
 from app.api import knowledge
+from app.api import ai
+from app.api import user
 
 
 @asynccontextmanager
@@ -29,6 +31,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(knowledge.router)
+app.include_router(ai.router)
+app.include_router(user.router)
 
 
 
