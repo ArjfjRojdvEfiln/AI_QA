@@ -3,12 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI,Request
 from app.core.database import engine, Base
 import app.models
-from config import DATABASE_URL
-from app.utils.response import success, error, error_response
+from app.utils.response import error_response
 from app.api import auth
 from app.api import knowledge
 from app.api import ai
 from app.api import user
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -35,6 +35,13 @@ app.include_router(ai.router)
 app.include_router(user.router)
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 开发阶段允许所有来源跨域
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有请求方法 (GET, POST, PUT, DELETE 等)
+    allow_headers=["*"],  # 允许所有请求头
+)
 # ==========================================
 # 💡 全局异常拦截（利用 error_response）
 # ==========================================
