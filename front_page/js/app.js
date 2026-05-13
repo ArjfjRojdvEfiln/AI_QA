@@ -217,12 +217,60 @@ function switchTab(tabName, element) {
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
 
-    const titleObj = { 'knowledge': '知识库', 'notes': '我的笔记', 'history': '浏览历史', 'feedback': '智能反馈' };
-    document.getElementById('main-header-title').innerText = titleObj[tabName];
+    const container = document.getElementById('content-container');
+    const headerTitle = document.getElementById('main-header-title');
+    const filterBar = document.getElementById('category-filter');
 
-    if(tabName === 'knowledge') loadArticles();
-    else if(tabName === 'history') loadHistory();
-    else document.getElementById('content-container').innerHTML = '<div style="text-align:center;color:#9ca3af;margin-top:50px;">该功能模块前端正在开发中...</div>';
+    if (tabName === 'knowledge') {
+        headerTitle.innerText = '知识探索';
+        filterBar.style.display = 'flex'; // 显示分类过滤
+        loadArticles();
+    } else if (tabName === 'profile') {
+        headerTitle.innerText = '个人中心';
+        filterBar.style.display = 'none'; // 隐藏分类过滤
+        renderProfilePage(); // 渲染个人中心主页
+    }
+}
+
+// 核心：渲染个人中心组合页面
+async function renderProfilePage() {
+    const container = document.getElementById('content-container');
+    container.innerHTML = `
+        <div class="profile-wrapper">
+            <div class="profile-tabs">
+                <button class="p-tab active" onclick="switchProfileSubTab('notes', this)">📝 我的笔记</button>
+                <button class="p-tab" onclick="switchProfileSubTab('history', this)">🕒 浏览历史</button>
+                <button class="p-tab" onclick="switchProfileSubTab('feedback', this)">💡 智能反馈</button>
+                <button class="p-tab" onclick="switchProfileSubTab('security', this)">🔒 修改密码</button>
+            </div>
+            <div id="profile-sub-content" class="profile-sub-content">
+                </div>
+        </div>
+    `;
+    // 默认打开第一个子项
+    switchProfileSubTab('notes', document.querySelector('.p-tab'));
+}
+
+// 切换个人中心内部的子模块
+async function switchProfileSubTab(subTab, btn) {
+    document.querySelectorAll('.p-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const subContainer = document.getElementById('profile-sub-content');
+    subContainer.innerHTML = '加载中...';
+
+    const renderFeedbackForm = (subContainer) => {
+        
+    };
+    if (subTab === 'notes') {
+        loadNotes(subContainer);
+    } else if (subTab === 'history') {
+        loadHistory(subContainer);
+    } else if (subTab === 'feedback') {
+        renderFeedbackForm(subContainer);
+    } else if (subTab === 'security') {
+        renderPasswordForm(subContainer);
+    }
 }
 
 async function loadArticles() {
@@ -255,6 +303,43 @@ async function loadArticles() {
             `;
         });
         container.innerHTML = html;
+    }
+}
+// app.js 中添加 loadNotes 函数实现
+async function loadNotes(container) {
+    const res = await fetchAPI('/api/user/notes', { method: 'GET' }); // 调用后端接口
+    if (res && res.data) {
+        const notes = res.data;
+        if (notes.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; color:#9ca3af; margin-top:30px;">
+                    <p>📭 暂无笔记，在知识库阅读时可以记录哦</p>
+                </div>`;
+            return;
+        }
+
+        let html = '<div class="notes-list">';
+        notes.forEach(note => {
+            html += `
+                <div class="note-card">
+                    <div class="note-content">${note.content}</div>
+                    <div class="note-actions">
+                        <button class="delete-btn" onclick="deleteNote(${note.id}, this)">删除</button>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+}
+
+// 补充删除笔记逻辑
+async function deleteNote(id, btn) {
+    if (!confirm("确定要删除这条笔记吗？")) return;
+    const res = await fetchAPI(`/api/user/notes/${id}`, { method: 'DELETE' });
+    if (res && res.code === 200) {
+        showToast("笔记删除成功");
+        btn.closest('.note-card').remove(); // 前端即时移除元素
     }
 }
 
@@ -345,6 +430,106 @@ async function sendChatMessage() {
         console.error('流式请求错误:', error);
         thinkingMsg.innerText = '网络连接异常，请检查后端服务';
     }
+}
+
+// 渲染修改密码表单
+function renderPasswordForm(container) {
+    container.innerHTML = `
+        <div class="card" style="max-width: 400px; margin: 20px auto;">
+            <h3>修改账户密码</h3>
+            <div class="input-group">
+                <input type="password" id="old-password" placeholder="请输入旧密码">
+            </div>
+            <div class="input-group">
+                <input type="password" id="new-password" placeholder="请输入新密码">
+            </div>
+            <button class="btn" onclick="submitUpdatePassword()">确认更新</button>
+        </div>
+    `;
+}
+
+// 提交修改密码请求
+async function submitUpdatePassword() {
+    const old_password = document.getElementById('old-password').value;
+    const new_password = document.getElementById('new-password').value;
+
+    if (!old_password || !new_password) {
+        showToast("请填写完整内容", "error");
+        return;
+    }
+
+    const res = await fetchAPI('/api/user/password', {
+        method: 'PUT',
+        body: JSON.stringify({ old_password, new_password })
+    });
+
+    if (res && res.code === 200) {
+        showToast("密码修改成功，请重新登录！");
+        setTimeout(() => logout(), 1500); // 强制重新登录
+    }
+}
+
+// app.js 中替换 renderFeedbackForm 函数
+function renderFeedbackForm(container) {
+    container.innerHTML = `
+        <div class="feedback-container">
+            <div class="feedback-header">
+                <h3>💡 意见反馈与智能助手</h3>
+                <p style="font-size: 13px; color: #6b7280;">您的反馈将被 Dify AI 自动分类并优先处理</p>
+            </div>
+            <div id="feedback-chat-history" class="feedback-chat-box">
+                <div class="msg ai">您好！我是系统助手。如果您在使用中遇到问题或有功能建议，请在下方告诉我们。</div>
+            </div>
+            <div class="feedback-input-area">
+                <textarea id="feedback-text" placeholder="请描述您的问题或建议..."></textarea>
+                <button class="btn" onclick="submitSmartFeedback()">提交反馈</button>
+            </div>
+        </div>
+    `;
+}
+
+// 智能反馈提交逻辑 [cite: 2]
+async function submitSmartFeedback() {
+    const textarea = document.getElementById('feedback-text');
+    const feedback_text = textarea.value.trim();
+    const chatHistory = document.getElementById('feedback-chat-history');
+
+    if (!feedback_text) {
+        showToast("请输入反馈内容", "error");
+        return;
+    }
+
+    // 1. 在界面显示用户的输入
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.innerText = feedback_text;
+    chatHistory.appendChild(userMsg);
+    textarea.value = ''; // 清空输入框
+
+    // 2. 显示 AI 正在思考
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg ai';
+    aiMsg.innerText = "智能助手正在为您分类并处理...";
+    chatHistory.appendChild(aiMsg);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // 3. 调用后端 Dify 联动接口 [cite: 2]
+    const res = await fetchAPI('/api/user/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ feedback_text })
+    });
+
+    if (res && res.data) {
+        // 4. 解析并显示 Dify 返回的分类和 AI 回复
+        const { category, reply } = res.data;
+        aiMsg.innerHTML = `
+            <div class="feedback-tag">标签: ${category}</div>
+            <div class="feedback-reply">${reply}</div>
+        `;
+    } else {
+        aiMsg.innerText = "抱歉，反馈处理遇到一点问题，我们会人工查看。";
+    }
+    chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 document.getElementById('ai-input').addEventListener('keypress', function (e) {
