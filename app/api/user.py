@@ -102,3 +102,27 @@ async def get_notes(
     result = await db.execute(select(StudyNote).where(StudyNote.username == current_user["username"]))
     notes = result.scalars().all()
     return success(data=[{"id": n.id, "content": n.study_q} for n in notes])
+
+
+@router.delete("/notes/{note_id}")
+async def delete_note(
+        note_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
+):
+    """删除当前用户的指定笔记"""
+    # 必须同时匹配 note_id 和 username，防止越权删除别人的笔记
+    result = await db.execute(
+        select(StudyNote).where(
+            StudyNote.id == note_id,
+            StudyNote.username == current_user["username"]
+        )
+    )
+    note = result.scalars().first()
+
+    if not note:
+        return error(msg="笔记不存在", code=404)
+
+    await db.delete(note)
+    await db.commit()
+    return success(msg="笔记删除成功")
