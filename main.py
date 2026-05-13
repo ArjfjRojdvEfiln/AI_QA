@@ -35,33 +35,8 @@ app.include_router(ai.router)
 app.include_router(user.router)
 
 
-
 # ==========================================
-# 👇 下面是测试统一返回格式的接口
-# ==========================================
-
-@app.get("/test/success")
-async def test_success_response():
-    """测试成功返回"""
-    # 模拟从数据库里查到的数据
-    mock_data = {
-        "user_id": 1,
-        "username": "FastAPI_Learner",
-        "role": "admin"
-    }
-    # 直接使用 success 包装
-    return success(data=mock_data, msg="获取测试数据成功！")
-
-
-@app.get("/test/error")
-async def test_error_response():
-    """测试失败返回"""
-    # 模拟业务逻辑报错（例如：文章不存在）
-    return error(msg="抱歉，您要找的文章不存在", code=404)
-
-
-# ==========================================
-# 💡 进阶：全局异常拦截（利用 error_response）
+# 💡 全局异常拦截（利用 error_response）
 # ==========================================
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

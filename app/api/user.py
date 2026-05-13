@@ -18,23 +18,32 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
     """展示用户的基本账户信息"""
     return success(data={"username": current_user["username"]}, msg="获取用户信息成功")
 
+
 @router.put("/password")
 async def update_password(
-    data: PasswordUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+        data: PasswordUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user: dict = Depends(get_current_user)
 ):
     """修改密码：验证旧密码，加密新密码后更新"""
+
+    # 【新增调试代码】打印当前解析出的用户名
+    print(f"========== 调试信息 ==========")
+    print(f"Token中解析出的用户名: '{current_user['username']}'")
+    print(f"============================")
+
     result = await db.execute(select(User).where(User.username == current_user["username"]))
     user = result.scalars().first()
 
     if not user:
+        # 【新增调试代码】打印数据库查询结果为空的提示
+        print("查询结果为空，说明数据库中不存在该 username")
         return error(msg="用户不存在", code=404)
 
-    if not verify_password(data.old_password, user.hashed_password):
+    if not verify_password(data.old_password, user.password):
         return error(msg="旧密码错误", code=400)
 
-    user.hashed_password = get_password_hash(data.new_password)
+    user.password = get_password_hash(data.new_password)
     await db.commit()
     return success(msg="密码修改成功，请重新登录")
 

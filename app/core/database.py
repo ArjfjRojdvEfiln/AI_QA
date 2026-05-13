@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from config import DATABASE_URL
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(
+DATABASE_URL,
+    echo=True,
+    pool_pre_ping=True,
+    pool_recycle=3600
+)
+
+
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # 所有数据模型类的基类

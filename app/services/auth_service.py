@@ -42,7 +42,7 @@ async def login_user(db: AsyncSession, user_data: UserLogin):
 
     # 3. 校验通过，签发 JWT Token (有效期 7 天)
     access_token = create_access_token(
-        subject={"sub": user.username},
+        subject=user.username,
         expires_delta=timedelta(days=7)
     )
 
