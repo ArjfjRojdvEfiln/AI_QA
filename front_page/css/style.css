@@ -220,12 +220,54 @@ body { background-color: var(--bg-color); color: var(--text-main); height: 100vh
 .article-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
 .article-meta { font-size: 12px; color: var(--text-muted); }
 
+/* AI助手面板 - 悬浮拖拽、缩放、折叠支持 */
 .ai-panel {
-    width: 320px; background: var(--surface-color); border-left: 1px solid var(--border-color);
-    display: flex; flex-direction: column;
-    transition: width 0.3s ease;
-    overflow: hidden;
+    position: fixed; /* 悬浮在最上层 */
+    right: 20px;
+    bottom: 20px;
+    width: 400px;
+    height: 600px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    resize: both; /* 🔥 神奇属性：支持右下角鼠标拖拽放大/缩小 */
+    overflow: hidden; /* 防止缩放时内容溢出 */
+    transition: height 0.3s ease, width 0.3s ease;
 }
+
+.ai-panel.collapsed {
+    height: 50px !important;
+    width: 250px !important;
+    resize: none; /* 折叠时不允许缩放 */
+}
+
+/* 拖拽头部区域 */
+.ai-header {
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    cursor: grab; /* 拖拽手势 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.ai-header:active {
+    cursor: grabbing; /* 拖拽中手势 */
+}
+
+.toggle-btn {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #666;
+}
+
 .ai-panel.collapsed {
     width: 0;
     padding: 0;
