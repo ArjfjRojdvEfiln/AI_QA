@@ -28,6 +28,9 @@ async def update_password(
     result = await db.execute(select(User).where(User.username == current_user["username"]))
     user = result.scalars().first()
 
+    if not user:
+        return error(msg="用户不存在", code=404)
+
     if not verify_password(data.old_password, user.hashed_password):
         return error(msg="旧密码错误", code=400)
 
