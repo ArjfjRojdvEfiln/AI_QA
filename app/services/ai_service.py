@@ -69,6 +69,7 @@ async def chat_stream(query: str, user_id: str, conversation_id: str = "", api_k
                     try:
                         data = json.loads(json_str)
                         if "answer" in data:
-                            yield data["answer"]
+                            # ✅ 必须加上 "data: " 前缀和 "\n\n" 换行符，前端/Yaak 才能解析！
+                            yield f"data: {data['answer']}\n\n"
                     except json.JSONDecodeError:
                         continue
