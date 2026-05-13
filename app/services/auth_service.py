@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from datetime import timedelta
+import re
 
 from app.models.user import User
 from app.schemas.auth import UserRegister, UserLogin

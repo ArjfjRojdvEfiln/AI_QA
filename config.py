@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
-    # 数据库配置
-    DATABASE_URL: str = ""
+    # 数据库配置 - 使用 SQLite 作为默认数据库
+    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
 
     # ==========================================
     # Dify 智能体配置区
@@ -41,3 +41,4 @@ settings = Settings()
 DATABASE_URL = settings.DATABASE_URL
 DIFY_BASE_URL = settings.DIFY_BASE_URL
 DIFY_API_KEY = settings.DIFY_API_KEY
+DIFY_FEEDBACK_API_KEY = settings.DIFY_FEEDBACK_API_KEY

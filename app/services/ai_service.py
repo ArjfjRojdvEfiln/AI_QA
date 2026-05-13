@@ -1,15 +1,35 @@
 import httpx
 import json
-from config import DIFY_BASE_URL, DIFY_API_KEY
+from config import DIFY_BASE_URL, DIFY_API_KEY, DIFY_FEEDBACK_API_KEY
 
-def get_dify_headers():
+def get_dify_headers(api_key=None):
     """构造 Dify 要求的请求头"""
+    key = api_key or DIFY_API_KEY
     return {
-        "Authorization": f"Bearer {DIFY_API_KEY}",
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json"
     }
 
-async def summarize_content(content: str, user_id: str) -> str:
+async def get_article_content(db, document_id: str):
+    """
+    根据文章ID从数据库获取文章内容
+    """
+    from app.models.knowledge import Knowledge
+    from sqlalchemy import select
+    
+    try:
+        article_id = int(document_id)
+        result = await db.execute(select(Knowledge).where(Knowledge.id == article_id))
+        article = result.scalars().first()
+        
+        if article:
+            return f"文章标题：{article.title}\n\n文章内容：{article.content}"
+        return None
+    except Exception as e:
+        print(f"获取文章内容失败: {e}")
+        return None
+
+async def summarize_content(content: str, user_id: str, api_key: str = None) -> str:
     """
     文章总结（阻塞式：等 Dify 彻底生成完再返回）
     """
@@ -17,17 +37,17 @@ async def summarize_content(content: str, user_id: str) -> str:
     payload = {
         "inputs": {},
         "query": f"请为以下内容生成一段精简的摘要总结：\n\n{content}",
-        "response_mode": "blocking", # 要求 Dify 整段返回
-        "user": str(user_id) # 透传用户ID，便于在 Dify 后台进行审计和限制
+        "response_mode": "blocking",
+        "user": str(user_id)
     }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(url, headers=get_dify_headers(), json=payload)
+        response = await client.post(url, headers=get_dify_headers(api_key), json=payload)
         response.raise_for_status()
         data = response.json()
         return data.get("answer", "未能生成摘要，请稍后再试。")
 
-async def chat_stream(query: str, user_id: str, conversation_id: str = ""):
+async def chat_stream(query: str, user_id: str, conversation_id: str = "", api_key: str = None):
     """
     自由问答（流式：打字机效果，拿到一点给前端发一点）
     """
@@ -35,23 +55,19 @@ async def chat_stream(query: str, user_id: str, conversation_id: str = ""):
     payload = {
         "inputs": {},
         "query": query,
-        "response_mode": "streaming", # 要求 Dify 流式输出 (SSE)
+        "response_mode": "streaming",
         "conversation_id": conversation_id,
         "user": str(user_id)
     }
 
     async with httpx.AsyncClient(timeout=120.0) as client:
-        # 使用 astream_post 进行异步流式请求
-        async with client.stream("POST", url, headers=get_dify_headers(), json=payload) as response:
+        async with client.stream("POST", url, headers=get_dify_headers(api_key), json=payload) as response:
             response.raise_for_status()
-            # 逐行读取 Dify 返回的 SSE (Server-Sent Events) 数据块
             async for line in response.aiter_lines():
                 if line.startswith("data: "):
-                    # 去掉前缀 "data: "，解析 JSON
                     json_str = line[6:]
                     try:
                         data = json.loads(json_str)
-                        # Dify 的流式数据包里，真正的回复文字在 answer 字段中
                         if "answer" in data:
                             yield data["answer"]
                     except json.JSONDecodeError:
