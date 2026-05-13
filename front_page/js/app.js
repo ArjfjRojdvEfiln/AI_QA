@@ -343,19 +343,34 @@ async function deleteNote(id, btn) {
     }
 }
 
-async function loadHistory() {
-    const container = document.getElementById('content-container');
+// 替换 app.js 大约第 271 行的 loadHistory 函数
+async function loadHistory(container) {
+    // 修复一个小Bug：确保渲染在右侧子面板里，而不是覆盖整个页面
+    container = container || document.getElementById('profile-sub-content');
+
     const res = await fetchAPI('/api/user/history?page=1&size=20', { method: 'GET' });
     if (res && res.data) {
-        let html = '';
+        // 在这里加上了“返回知识库”的按钮，并优化了布局
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;"></h3>
+                <button class="btn" onclick="switchTab('knowledge', document.querySelector('.menu-item'))" style="background:#6b7280; padding: 6px 12px; font-size: 13px;">⬅ 返回知识库</button>
+            </div>
+            <div class="history-list">
+        `;
         const list = res.data.items || res.data;
-        list.forEach(item => {
-            html += `<div class="article-card">
-                <div class="article-title">${item.title || '未知文章'}</div>
-                <div class="article-meta">浏览时间: ${new Date(item.created_at).toLocaleString()}</div>
-            </div>`;
-        });
-        container.innerHTML = html || '<div style="text-align:center;margin-top:50px;">暂无浏览记录</div>';
+        if (list.length === 0) {
+            html += '<div style="text-align:center;margin-top:50px;color:#9ca3af;">暂无浏览记录</div>';
+        } else {
+            list.forEach(item => {
+                html += `<div class="article-card" style="margin-bottom: 10px;">
+                    <div class="article-title">${item.title || '未知文章'}</div>
+                    <div class="article-meta">浏览时间: ${new Date(item.created_at).toLocaleString()}</div>
+                </div>`;
+            });
+        }
+        html += '</div>';
+        container.innerHTML = html;
     }
 }
 
@@ -469,67 +484,65 @@ async function submitUpdatePassword() {
     }
 }
 
-// app.js 中替换 renderFeedbackForm 函数
-function renderFeedbackForm(container) {
-    container.innerHTML = `
-        <div class="feedback-container">
-            <div class="feedback-header">
-                <h3>💡 意见反馈与智能助手</h3>
-                <p style="font-size: 13px; color: #6b7280;">您的反馈将被 Dify AI 自动分类并优先处理</p>
-            </div>
-            <div id="feedback-chat-history" class="feedback-chat-box">
-                <div class="msg ai">您好！我是系统助手。如果您在使用中遇到问题或有功能建议，请在下方告诉我们。</div>
-            </div>
-            <div class="feedback-input-area">
-                <textarea id="feedback-text" placeholder="请描述您的问题或建议..."></textarea>
-                <button class="btn" onclick="submitSmartFeedback()">提交反馈</button>
-            </div>
-        </div>
-    `;
-}
+// ====== 第二个智能体：客服与智能反馈逻辑 ======
+async function submitFeedback() {
+    const inputEl = document.getElementById('feedback-input');
+    const chatWindow = document.getElementById('feedback-chat-window');
+    const text = inputEl.value.trim();
 
-// 智能反馈提交逻辑 [cite: 2]
-async function submitSmartFeedback() {
-    const textarea = document.getElementById('feedback-text');
-    const feedback_text = textarea.value.trim();
-    const chatHistory = document.getElementById('feedback-chat-history');
-
-    if (!feedback_text) {
-        showToast("请输入反馈内容", "error");
+    if (!text) {
+        alert("请输入你想反馈的内容！");
         return;
     }
 
-    // 1. 在界面显示用户的输入
-    const userMsg = document.createElement('div');
-    userMsg.className = 'msg user';
-    userMsg.innerText = feedback_text;
-    chatHistory.appendChild(userMsg);
-    textarea.value = ''; // 清空输入框
+    // 1. 把用户的输入气泡显示在右侧
+    chatWindow.innerHTML += `
+        <div style="align-self: flex-end; background: #007bff; color: white; padding: 10px 15px; border-radius: 8px; max-width: 80%;">
+            ${text}
+        </div>`;
+    inputEl.value = ''; // 清空输入框
 
-    // 2. 显示 AI 正在思考
-    const aiMsg = document.createElement('div');
-    aiMsg.className = 'msg ai';
-    aiMsg.innerText = "智能助手正在为您分类并处理...";
-    chatHistory.appendChild(aiMsg);
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+    // 2. 显示 AI 正在思考的提示气泡
+    const loadingId = 'loading-' + Date.now();
+    chatWindow.innerHTML += `
+        <div id="${loadingId}" style="align-self: flex-start; background: #f0f2f5; padding: 10px 15px; border-radius: 8px; color: #666;">
+            客服助手正在处理...
+        </div>`;
+    chatWindow.scrollTop = chatWindow.scrollHeight; // 滚动条自动到底部
 
-    // 3. 调用后端 Dify 联动接口 [cite: 2]
-    const res = await fetchAPI('/api/user/feedback', {
-        method: 'POST',
-        body: JSON.stringify({ feedback_text })
-    });
+    try {
+        // 3. 呼叫你的后端 /api/user/feedback 接口
+        const res = await fetchAPI('/api/user/feedback', {
+            method: 'POST',
+            body: JSON.stringify({ content: text })
+        });
 
-    if (res && res.data) {
-        // 4. 解析并显示 Dify 返回的分类和 AI 回复
-        const { category, reply } = res.data;
-        aiMsg.innerHTML = `
-            <div class="feedback-tag">标签: ${category}</div>
-            <div class="feedback-reply">${reply}</div>
-        `;
-    } else {
-        aiMsg.innerText = "抱歉，反馈处理遇到一点问题，我们会人工查看。";
+        // 移除加载气泡
+        document.getElementById(loadingId).remove();
+
+        if (res.code === 200) {
+            // 4. 提取 AI 返回的内容和打的标签
+            const aiReply = res.data.reply || "感谢您的反馈，我们已记录在案！";
+            const category = res.data.category || "未分类";
+
+            // 渲染 AI 的回复气泡
+            chatWindow.innerHTML += `
+                <div style="align-self: flex-start; background: #e6f7ff; padding: 10px 15px; border-radius: 8px; color: #333; max-width: 80%;">
+                    <div style="font-size: 12px; color: #888; margin-bottom: 6px;">
+                        <span style="border: 1px solid #1890ff; color: #1890ff; padding: 2px 6px; border-radius: 4px;">标签：${category}</span>
+                    </div>
+                    <div>${aiReply}</div>
+                </div>`;
+        } else {
+            chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">处理失败: ${res.msg}</div>`;
+        }
+    } catch (error) {
+        document.getElementById(loadingId)?.remove();
+        chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">网络出错了，请检查后端是否开启！</div>`;
     }
-    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // 保持滚动条在最底部
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 document.getElementById('ai-input').addEventListener('keypress', function (e) {
