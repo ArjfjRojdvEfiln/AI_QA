@@ -260,8 +260,25 @@ async function switchProfileSubTab(subTab, btn) {
     subContainer.innerHTML = '加载中...';
 
     const renderFeedbackForm = (subContainer) => {
-        
-    };
+    subContainer.innerHTML = `
+        <div class="card" style="display: flex; flex-direction: column; height: 500px; margin-top: 10px;">
+            <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">🤖 智能反馈客服</h3>
+            
+            <div id="feedback-chat-window" style="flex: 1; overflow-y: auto; background: #fafafa; padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="align-self: flex-start; background: #e6f7ff; padding: 10px 15px; border-radius: 8px; color: #333; max-width: 80%; line-height: 1.5;">
+                    你好！我是系统的专属客服。遇到什么Bug，或者有什么优化建议，都可以告诉我哦！
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: stretch;">
+                <textarea id="feedback-input" placeholder="请输入你的反馈（支持多行输入）..." 
+                    style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; height: 70px; resize: none; font-family: inherit; font-size: 14px; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);"></textarea>
+                <button class="btn" onclick="submitFeedback()" 
+                    style="width: 100px; height: 70px; flex-shrink: 0; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer;">发 送</button>
+            </div>
+        </div>
+    `;
+};
     if (subTab === 'notes') {
         loadNotes(subContainer);
     } else if (subTab === 'history') {
@@ -513,9 +530,9 @@ async function submitFeedback() {
     try {
         // 3. 呼叫你的后端 /api/user/feedback 接口
         const res = await fetchAPI('/api/user/feedback', {
-            method: 'POST',
-            body: JSON.stringify({ content: text })
-        });
+    method: 'POST',
+    body: JSON.stringify({ feedback_text: text })
+});
 
         // 移除加载气泡
         document.getElementById(loadingId).remove();
