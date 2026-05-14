@@ -8,11 +8,11 @@
 </head>
 <body onload="checkAuthAndInit()">
 
-    <div class="sidebar">
-        <div class="nav-item active" onclick="switchTab('knowledge')">
+    <div class="sidebar" id="sidebar">
+        <div class="nav-item active menu-item" onclick="switchTab('knowledge', this)">
             <i>📚</i><span>知识大厅</span>
         </div>
-        <div class="nav-item" onclick="switchTab('profile')">
+        <div class="nav-item menu-item" onclick="switchTab('profile', this)">
             <i>👤</i><span>个人中心</span>
         </div>
         <div class="spacer"></div>
@@ -23,29 +23,31 @@
 
     <div class="main-content">
         <div class="header">
-            <h1>✨ 知识枢纽矩阵</h1>
+            <h1 id="main-header-title">✨ 知识枢纽矩阵</h1>
             <div class="user-profile">
                 <span>👋 欢迎，<strong id="current-username">User</strong></span>
             </div>
         </div>
 
-        <div id="content-area">
-            <div class="article-grid" id="article-list">
-                </div>
+        <div id="category-filter" class="category-bar" style="padding: 10px 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            </div>
+
+        <div id="content-container" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px;">
+            <div id="article-list"></div>
         </div>
     </div>
 
-    <div id="ai-toggle-btn" onclick="toggleAIPanel()" title="唤醒 Dify 助手">
+    <div id="ai-toggle-btn" onclick="toggleAiPanel()" title="唤醒 Dify 助手">
         🤖
     </div>
 
     <div id="ai-panel" style="display: none;">
         <div class="ai-header" id="ai-drag-handle">
             <span>🤖 Dify 智能终端</span>
-            <span class="close-ai-btn" onclick="toggleAIPanel()">✖</span>
+            <span class="close-ai-btn" onclick="toggleAiPanel()">✖</span>
         </div>
-        <div class="ai-chat-box" id="ai-chat-box">
-            <div class="msg-ai">你好！我是你的专属 AI 助手。遇到不懂的知识随时问我，或者直接让我总结文章哦～</div>
+        <div class="ai-chat-box" id="chat-box">
+            <div class="msg ai">你好！我是你的专属 AI 助手。遇到不懂的知识随时问我，或者直接让我总结文章哦～</div>
         </div>
         <div class="ai-input-area">
             <input type="text" id="ai-input" placeholder="输入你想问的问题...">

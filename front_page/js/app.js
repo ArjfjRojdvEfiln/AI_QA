@@ -160,38 +160,23 @@ function checkAuthAndInit() {
 }
 
 function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    // 🔥 退出时也是真正的跳转！
-    window.location.href = 'login.html';
-}
-// =================================================
+   const confirmLogout = confirm("💡 确定要退出当前账号吗？");
 
-function toggleSidebar() {
-    sidebarCollapsed = !sidebarCollapsed;
-    const sidebar = document.getElementById('sidebar');
-    const placeholder = document.getElementById('sidebar-placeholder');
-    
-    if (sidebarCollapsed) {
-        sidebar.classList.add('collapsed');
-        placeholder.style.display = 'flex';
-    } else {
-        sidebar.classList.remove('collapsed');
-        placeholder.style.display = 'none';
+    if (confirmLogout) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        // 🔥 退出时真正跳转回登录页
+        window.location.href = 'login.html';
     }
 }
-
+// =================================================
+// 找到这个函数并修改，确保 ID 对应上
 function toggleAiPanel() {
-    aiPanelCollapsed = !aiPanelCollapsed;
     const aiPanel = document.getElementById('ai-panel');
-    const placeholder = document.getElementById('ai-placeholder');
-    
-    if (aiPanelCollapsed) {
-        aiPanel.classList.add('collapsed');
-        placeholder.style.display = 'flex';
+    if (aiPanel.style.display === 'none') {
+        aiPanel.style.display = 'flex'; // 显示面板
     } else {
-        aiPanel.classList.remove('collapsed');
-        placeholder.style.display = 'none';
+        aiPanel.style.display = 'none'; // 隐藏面板
     }
 }
 
