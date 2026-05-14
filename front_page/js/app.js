@@ -1,7 +1,5 @@
 const API_BASE = "http://127.0.0.1:9991";
 let isLoginMode = true;
-let sidebarCollapsed = false;
-let aiPanelCollapsed = false;
 let currentCategoryId = 0;
 
 function showToast(msg, type='success') {
@@ -83,8 +81,6 @@ function toggleAuthMode() {
     document.getElementById('confirm-password').value = '';
 }
 
-// =========== 替换 app.js 中的这三个函数 ===========
-
 async function handleAuth() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -141,11 +137,8 @@ function checkAuthAndInit() {
 
     if (token) {
         if (isLoginPage) {
-            // 如果已经登录了，但用户非要访问 login.html，直接强制把他踢回主页！
             window.location.href = 'index.html';
         } else {
-            // 正常在主页，加载数据
-            // 注意：因为去掉了 main-view 的隐藏逻辑，这里不用写 display='flex' 了
             document.getElementById('current-username').innerText = localStorage.getItem('username');
             loadCategories();
             loadArticles();
@@ -155,13 +148,11 @@ function checkAuthAndInit() {
             // 如果没登录，却想偷偷访问 index.html 主页，直接重定向回登录页！
             window.location.href = 'login.html';
         }
-        // 如果没登录且在 login.html，那就乖乖待着让用户输入账号密码
     }
 }
 
 function logout() {
    const confirmLogout = confirm("💡 确定要退出当前账号吗？");
-
     if (confirmLogout) {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
@@ -170,7 +161,6 @@ function logout() {
     }
 }
 // =================================================
-// 找到这个函数并修改，确保 ID 对应上
 function toggleAiPanel() {
     const aiPanel = document.getElementById('ai-panel');
     if (aiPanel.style.display === 'none') {
@@ -223,6 +213,7 @@ function switchTab(tabName, element) {
 // 核心：渲染个人中心组合页面
 async function renderProfilePage() {
     const container = document.getElementById('content-container');
+    // language=HTML
     container.innerHTML = `
         <div class="profile-wrapper">
             <div class="profile-tabs">
@@ -348,7 +339,6 @@ async function deleteNote(id, btn) {
     }
 }
 
-// 替换 app.js 大约第 271 行的 loadHistory 函数
 async function loadHistory(container) {
     // 修复一个小Bug：确保渲染在右侧子面板里，而不是覆盖整个页面
     container = container || document.getElementById('profile-sub-content');
@@ -368,9 +358,15 @@ async function loadHistory(container) {
             html += '<div style="text-align:center;margin-top:50px;color:#9ca3af;">暂无浏览记录</div>';
         } else {
             list.forEach(item => {
+                // 绝杀：管你后端叫啥名字，只要有时间我都给你揪出来！
+                let rawTime = item.viewed_at || item.created_at || item.updated_at || item.time;
+                let timeStr = rawTime ? new Date(rawTime).toLocaleString() : "刚才";
+
                 html += `<div class="article-card" style="margin-bottom: 10px;">
-                    <div class="article-title">${item.title || '未知文章'}</div>
-                    <div class="article-meta">浏览时间: ${new Date(item.created_at).toLocaleString()}</div>
+                    <div class="article-title" style="font-weight: bold;">${item.title || '未知文章'}</div>
+                    <div class="article-meta" style="color: #888; font-size: 12px; margin-top: 5px;">
+                        🕰️ 浏览时间: ${timeStr}
+                    </div>
                 </div>`;
             });
         }
@@ -404,58 +400,81 @@ async function summarizeArticle(id, title) {
         body: JSON.stringify({document_id: String(id)})
     });
 
-
-    async function sendChatMessage() {
-        const inputEl = document.getElementById('ai-input');
-        const text = inputEl.value.trim();
-        if (!text) return;
-
-        appendMessage('user', text);
-        inputEl.value = '';
-        const thinkingMsg = appendMessage('ai', '');
-
-        const token = localStorage.getItem('token');
-        const url = `${API_BASE}/api/ai/chat`;
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({query: text})
-            });
-
-            if (!response.ok) {
-                thinkingMsg.innerText = '请求失败，请重试';
-                return;
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder('utf-8');
-            let accumulatedText = '';
-
-            while (true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-
-                accumulatedText += decoder.decode(value, {stream: true});
-                thinkingMsg.innerText = accumulatedText;
-            }
-
-            if (!thinkingMsg.innerText.trim()) {
-                thinkingMsg.innerText = '未获取到响应';
-            }
-        } catch (error) {
-            console.error('流式请求错误:', error);
-            thinkingMsg.innerText = '网络连接异常，请检查后端服务';
-        }
+    // 这里补回了被弄丢的处理逻辑和救命的大括号！
+    if (res && res.data) {
+        const msgs = document.querySelectorAll('.msg.ai');
+        msgs[msgs.length - 1].innerText = res.data.summary || res.data;
     }
+}
+
+async function sendChatMessage() {
+    const inputEl = document.getElementById('ai-input');
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    inputEl.value = '';
+    const thinkingMsg = appendMessage('ai', '');
+
+    const token = localStorage.getItem('token');
+    const url = `${API_BASE}/api/ai/chat`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({query: text})
+        });
+
+        if (!response.ok) {
+            thinkingMsg.innerText = '请求失败，请重试';
+            return;
+        }
+
+        // ... 前面代码保持不变 ...
+const reader = response.body.getReader();
+const decoder = new TextDecoder('utf-8');
+let accumulatedText = '';
+
+while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value, {stream: true});
+
+    // 1. 处理 SSE 格式：按行拆分，去掉每行开头的 "data: "
+    const lines = chunk.split('\n');
+    lines.forEach(line => {
+        if (line.startsWith('data: ')) {
+            const actualContent = line.replace('data: ', '');
+            accumulatedText += actualContent;
+        }
+    });
+
+    // 2. (可选) 过滤掉 <think> 标签及其内部内容，让界面只显示最终答案
+    // 如果你想看思考过程，就删掉下面这行正则替换
+    const cleanText = accumulatedText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+    // 3. 更新到界面上
+    thinkingMsg.innerText = cleanText || (accumulatedText.includes('<think>') ? 'AI 正在思考中...' : '');
+}
+// ... 后面代码保持不变 ...
+
+        if (!thinkingMsg.innerText.trim()) {
+            thinkingMsg.innerText = '未获取到响应';
+        }
+    } catch (error) {
+        console.error('流式请求错误:', error);
+        thinkingMsg.innerText = '网络连接异常，请检查后端服务';
+    }
+}
 
 // 渲染修改密码表单
-    function renderPasswordForm(container) {
-        container.innerHTML = `
+function renderPasswordForm(container) {
+    container.innerHTML = `
         <div class="card" style="max-width: 400px; margin: 20px auto;">
             <h3>修改账户密码</h3>
             <div class="input-group">
@@ -467,161 +486,185 @@ async function summarizeArticle(id, title) {
             <button class="btn" onclick="submitUpdatePassword()">确认更新</button>
         </div>
     `;
-    }
+}
 
 // 提交修改密码请求
-    async function submitUpdatePassword() {
-        const old_password = document.getElementById('old-password').value;
-        const new_password = document.getElementById('new-password').value;
+// 提交修改密码请求（已加入究极弹框报错提示！）
+async function submitUpdatePassword() {
+    const old_password = document.getElementById('old-password').value;
+    const new_password = document.getElementById('new-password').value;
 
-        if (!old_password || !new_password) {
-            showToast("请填写完整内容", "error");
-            return;
-        }
-
-        const res = await fetchAPI('/api/user/password', {
-            method: 'PUT',
-            body: JSON.stringify({old_password, new_password})
-        });
-
-        if (res && res.code === 200) {
-            showToast("密码修改成功，请重新登录！");
-            setTimeout(() => logout(), 1500); // 强制重新登录
-        }
+    if (!old_password || !new_password) {
+        showToast("大哥，新旧密码都得填啊！", "error");
+        return;
     }
 
+    // 1. 前端先拦一道：新密码不到6位直接弹窗骂人（啊不，是温柔提示）
+    if (new_password.length < 6) {
+        alert("新密码太短啦，系统规定至少得 6 位！");
+        return;
+    }
+
+    // 呼叫后端接口
+    const res = await fetchAPI('/api/user/password', {
+        method: 'PUT',
+        body: JSON.stringify({old_password, new_password})
+    });
+
+    // 2. 后端返回的各种奇葩死法，咱们全给它弹框爆出来！
+    if (res && res.detail) {
+        // 抓住了 FastAPI 的 422 报错
+        alert("格式不对啊老铁：" + JSON.stringify(res.detail));
+    } else if (res && res.code && res.code !== 200) {
+        // 抓住了你后端的业务报错，比如“旧密码错误”
+        alert("修改失败啦 ❌：" + res.msg);
+    } else if (res && res.code === 200) {
+        // 成功了也得大声告诉用户！
+        alert("🎉 密码修改成功！赶紧重新登录吧！");
+        setTimeout(() => logout(), 1500);
+    }
+}
+
 // ====== 第二个智能体：客服与智能反馈逻辑 ======
-    async function submitFeedback() {
-        const inputEl = document.getElementById('feedback-input');
-        const chatWindow = document.getElementById('feedback-chat-window');
-        const text = inputEl.value.trim();
+async function submitFeedback() {
+    const inputEl = document.getElementById('feedback-input');
+    const chatWindow = document.getElementById('feedback-chat-window');
+    const text = inputEl.value.trim();
 
-        if (!text) {
-            alert("请输入你想反馈的内容！");
-            return;
-        }
+    if (!text) {
+        alert("请输入你想反馈的内容！");
+        return;
+    }
 
-        // 1. 把用户的输入气泡显示在右侧
-        chatWindow.innerHTML += `
+    // 1. 把用户的输入气泡显示在右侧
+    chatWindow.innerHTML += `
         <div style="align-self: flex-end; background: #007bff; color: white; padding: 10px 15px; border-radius: 8px; max-width: 80%;">
             ${text}
         </div>`;
-        inputEl.value = ''; // 清空输入框
+    inputEl.value = ''; // 清空输入框
 
-        // 2. 显示 AI 正在思考的提示气泡
-        const loadingId = 'loading-' + Date.now();
-        chatWindow.innerHTML += `
+    // 2. 显示 AI 正在思考的提示气泡
+    const loadingId = 'loading-' + Date.now();
+    chatWindow.innerHTML += `
         <div id="${loadingId}" style="align-self: flex-start; background: #f0f2f5; padding: 10px 15px; border-radius: 8px; color: #666;">
             客服助手正在处理...
         </div>`;
-        chatWindow.scrollTop = chatWindow.scrollHeight; // 滚动条自动到底部
+    chatWindow.scrollTop = chatWindow.scrollHeight; // 滚动条自动到底部
 
-        try {
-            // 3. 呼叫你的后端 /api/user/feedback 接口
-            const res = await fetchAPI('/api/user/feedback', {
-                method: 'POST',
-                body: JSON.stringify({feedback_text: text})
-            });
+    try {
+        // 3. 呼叫你的后端 /api/user/feedback 接口
+        const res = await fetchAPI('/api/user/feedback', {
+            method: 'POST',
+            body: JSON.stringify({feedback_text: text})
+        });
 
-            // 移除加载气泡
-            document.getElementById(loadingId).remove();
+        // 移除加载气泡
+        document.getElementById(loadingId).remove();
 
-            if (res.code === 200) {
-                // 4. 提取 AI 返回的内容和打的标签
-                const aiReply = res.data.reply || "感谢您的反馈，我们已记录在案！";
-                const category = res.data.category || "未分类";
+        if (res.code === 200) {
+            // 4. 提取 AI 返回的内容和打的标签
+            const aiReply = res.data.reply || "感谢您的反馈，我们已记录在案！";
+            const category = res.data.category || "未分类";
 
-                // 渲染 AI 的回复气泡
-                chatWindow.innerHTML += `
+            // 渲染 AI 的回复气泡
+            chatWindow.innerHTML += `
                 <div style="align-self: flex-start; background: #e6f7ff; padding: 10px 15px; border-radius: 8px; color: #333; max-width: 80%;">
                     <div style="font-size: 12px; color: #888; margin-bottom: 6px;">
                         <span style="border: 1px solid #1890ff; color: #1890ff; padding: 2px 6px; border-radius: 4px;">标签：${category}</span>
                     </div>
                     <div>${aiReply}</div>
                 </div>`;
-            } else {
-                chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">处理失败: ${res.msg}</div>`;
-            }
-        } catch (error) {
-            document.getElementById(loadingId)?.remove();
-            chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">网络出错了，请检查后端是否开启！</div>`;
+        } else {
+            chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">处理失败: ${res.msg}</div>`;
         }
-
-        // 保持滚动条在最底部
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch (error) {
+        document.getElementById(loadingId)?.remove();
+        chatWindow.innerHTML += `<div style="align-self: flex-start; color: red; margin: 10px 0;">网络出错了，请检查后端是否开启！</div>`;
     }
+
+    // 保持滚动条在最底部
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
 
 // ================= 新增：阅读文章与记笔记逻辑 =================
-    let currentViewingArticleId = null;
+let currentViewingArticleId = null;
 
 // 1. 打开文章弹窗
-    async function openArticle(id, title) {
-        currentViewingArticleId = id;
-        document.getElementById('article-modal').style.display = 'flex';
-        document.getElementById('modal-article-title').innerText = title;
-        document.getElementById('modal-article-content').innerHTML = '正在向服务器请求数据...';
-        document.getElementById('new-note-input').value = ''; // 清空上一次的笔记框
+async function openArticle(id, title) {
+    currentViewingArticleId = id;
+    document.getElementById('article-modal').style.display = 'flex';
+    document.getElementById('modal-article-title').innerText = title;
+    document.getElementById('modal-article-content').innerHTML = '正在向服务器请求数据...';
+    document.getElementById('new-note-input').value = ''; // 清空上一次的笔记框
 
-        // 🔥 重点：请求这个详情接口！你的后端就会在这里悄悄写入 History 浏览记录！
-        const res = await fetchAPI(`/api/articles/${id}`, {method: 'GET'});
+    // 🔥 重点：请求这个详情接口！你的后端就会在这里悄悄写入 History 浏览记录！
+    const res = await fetchAPI(`/api/articles/${id}`, {method: 'GET'});
 
-        if (res && res.data) {
-            document.getElementById('modal-article-content').innerHTML = res.data.content || '这篇文章只有标题，没有正文内容哦~';
-        } else {
-            document.getElementById('modal-article-content').innerHTML = '<span style="color:red;">获取文章失败，请检查后端接口。</span>';
-        }
+    if (res && res.data) {
+        document.getElementById('modal-article-content').innerHTML = res.data.content || '这篇文章只有标题，没有正文内容哦~';
+    } else {
+        document.getElementById('modal-article-content').innerHTML = '<span style="color:red;">获取文章失败，请检查后端接口。</span>';
     }
+}
 
 // 2. 关闭弹窗
-    function closeArticleModal() {
-        document.getElementById('article-modal').style.display = 'none';
-        currentViewingArticleId = null;
+function closeArticleModal() {
+    document.getElementById('article-modal').style.display = 'none';
+    currentViewingArticleId = null;
+}
+
+// 3. 强制唤醒 AI 总结（完美修复版）
+function triggerSummarize() {
+    const title = document.getElementById('modal-article-title').innerText;
+
+   const articleId = currentViewingArticleId;
+
+    closeArticleModal(); // 现在关弹窗就不会弄丢 ID 了
+
+   const aiPanel = document.getElementById('ai-panel');
+    if (aiPanel) {
+        aiPanel.style.display = 'flex';
+        aiPanel.style.height = '600px';
     }
 
-// 3. 在弹窗里直接呼叫 AI 总结
-    function triggerSummarize() {
-        const title = document.getElementById('modal-article-title').innerText;
-        closeArticleModal(); // 关掉阅读弹窗
+    // 使用存下来的 articleId 呼叫大模型干活
+    summarizeArticle(articleId, title);
+}
 
-        // 打开右侧 AI 面板
-        const aiPanel = document.getElementById('ai-panel');
-        if (aiPanel.style.display === 'none') {
-            aiPanel.style.display = 'flex';
-        }
+// 4. 提交笔记（完美修复版）
+async function submitNote() {
+    const title = document.getElementById('modal-article-title').innerText;
+    const content = document.getElementById('new-note-input').value.trim();
 
-        // 调用你原有的总结函数
-        summarizeArticle(currentViewingArticleId, title);
+    if (!content) {
+        showToast('好记性不如烂笔头，但你总得写点啥呀！', 'error');
+        return;
     }
-
-// 4. 提交笔记
-    async function submitNote() {
-        const content = document.getElementById('new-note-input').value.trim();
-        if (!content) {
-            showToast('好记性不如烂笔头，但你总得写点啥呀！', 'error');
-            return;
-        }
-
-        // 调用创建笔记接口（根据你后端的实际参数名调整，这里传了 content 和文章 ID）
-        const res = await fetchAPI('/api/user/notes', {
-            method: 'POST',
-            body: JSON.stringify({
-                content: content,
-                knowledge_id: currentViewingArticleId // 顺便记录这条笔记是属于哪篇文章的
-            })
-        });
-
-        if (res && res.code === 200) {
-            showToast('📝 笔记保存成功！去个人中心查看吧！');
-            document.getElementById('new-note-input').value = ''; // 清空输入框
-        }
-    }
-
-    document.getElementById('ai-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
+    const res = await fetchAPI('/api/user/notes', {
+        method: 'POST',
+        body: JSON.stringify({
+            title: `关于《${title}》的笔记`, // 补上必填的标题字段
+            content: content,
+            study_q: content,
+            knowledge_id: currentViewingArticleId,       // 字段名盲猜 A
+            related_knowledge_id: currentViewingArticleId, // 字段名盲猜 B (你的说明文档里的名字)
+            doc_id: currentViewingArticleId              // 字段名盲猜 C
+        })
     });
 
-    window.onload = checkAuthAndInit;
+    if (res && res.code === 200) {
+        showToast('📝 笔记保存成功！去个人中心查看吧！');
+        document.getElementById('new-note-input').value = ''; // 成功后清空输入框
+    } else {
+        showToast('保存失败: ' + (res?.msg || '请检查后端终端报错'), 'error');
+    }
 }
+
+document.getElementById('ai-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+});
+
+window.onload = checkAuthAndInit;

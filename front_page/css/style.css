@@ -151,13 +151,14 @@ body {
 ========================================= */
 .profile-tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #f3f4f6; /* 底部加一条浅色基准线 */
-    padding-bottom: 10px;
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中（可选） */
+    flex-wrap: wrap; /* 如果分类太多放不下，自动换行 */
+    width: 100%;
 }
 
 .p-tab {
+    justify-content: center; /* 水平居中 */
     background: transparent;
     border: none;
     padding: 10px 20px;
