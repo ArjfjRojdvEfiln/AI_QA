@@ -1,10 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录 - AI 知识库核心</title>
+    <link rel="stylesheet" href="../css/login.css">
 </head>
 <body>
-$END$
+
+    <div id="toast">提示消息</div>
+
+    <div class="tech-card">
+        <h2 id="auth-title"><span>❖</span> 终端节点登录</h2>
+
+        <div class="input-group">
+            <input type="text" id="username" placeholder="输入节点ID (用户名)" maxlength="20">
+            <span id="username-error" class="error-text"></span>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="password" placeholder="输入访问密钥 (密码)" maxlength="20">
+            <span id="password-error" class="error-text"></span>
+        </div>
+
+        <div class="input-group" id="confirm-password-group" style="display: none;">
+            <input type="password" id="confirm-password" placeholder="验证访问密钥" maxlength="20">
+            <span id="confirm-password-error" class="error-text"></span>
+        </div>
+
+        <button class="btn" id="auth-btn" onclick="handleAuth()">AUTH_INITIATE</button>
+
+        <div class="toggle-auth" onclick="toggleAuthMode()">
+            <span id="auth-switch-text">未授权节点？申请注册</span>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
 </body>
 </html>

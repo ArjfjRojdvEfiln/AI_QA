@@ -3,90 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能知识库与AI问答系统</title>
+    <title>AI 知识枢纽核心</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
+<body onload="checkAuthAndInit()">
 
-    <div id="toast">提示消息</div>
-
-    <div id="auth-view">
-        <div class="auth-left">
-            <div class="auth-card">
-                <h2 id="auth-title">欢迎登录</h2>
-                <div class="input-group">
-                    <input type="text" id="username" placeholder="用户名" maxlength="20">
-                    <span id="username-error" class="error-text"></span>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="password" placeholder="密码" maxlength="20">
-                    <span id="password-error" class="error-text"></span>
-                </div>
-                <div class="input-group" id="confirm-password-group" style="display: none;">
-                    <input type="password" id="confirm-password" placeholder="确认密码" maxlength="20">
-                    <span id="confirm-password-error" class="error-text"></span>
-                </div>
-                <button class="btn" id="auth-btn" onclick="handleAuth()">登 录</button>
-                <div class="toggle-auth" onclick="toggleAuthMode()">
-                    <span id="auth-switch-text">没有账号？点击注册</span>
-                </div>
-            </div>
+    <div class="sidebar">
+        <div class="nav-item active" onclick="switchTab('knowledge')">
+            <i>📚</i><span>知识大厅</span>
         </div>
-        <div class="auth-right">
-            <div class="auth-image">
-                <img src="../images/page1.jpg" alt="背景图片">
-                <!-- <div class="image-placeholder">
-                    <div class="placeholder-icon">🖼️</div>
-                    <div class="placeholder-text">图片区域</div>
-                    <div class="placeholder-hint">请将图片放入 front_page/images/ 文件夹</div>
-                </div> -->
-            </div>
+        <div class="nav-item" onclick="switchTab('profile')">
+            <i>👤</i><span>个人中心</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="nav-item logout-btn" onclick="logout()">
+            <i>🚪</i><span>退出登录</span>
         </div>
     </div>
 
-    <div id="main-view">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">🚀 AI 知识库系统</div>
-                <button class="collapse-btn" id="sidebar-collapse" onclick="toggleSidebar()">›</button>
+    <div class="main-content">
+        <div class="header">
+            <h1>✨ 知识枢纽矩阵</h1>
+            <div class="user-profile">
+                <span>👋 欢迎，<strong id="current-username">User</strong></span>
             </div>
-            <div class="menu-items">
-                <div class="menu-item active" onclick="switchTab('knowledge', this)">📚 知识探索</div>
-                <div class="menu-item" onclick="switchTab('profile', this)">👤 个人中心</div>
-            </div>
-            <div class="user-info">
-                <span id="current-username" style="font-weight: bold; color: var(--primary-color);">User</span>
-                <button onclick="logout()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px;">退出</button>
-            </div>
-        </aside>
-        <div class="sidebar-placeholder" id="sidebar-placeholder" onclick="toggleSidebar()">‹</div>
+        </div>
 
-        <main class="content-area">
-            <header class="header">
-                <div class="header-title" id="main-header-title">所有文章</div>
-                <div class="category-filter" id="category-filter">
-                    <span class="category-tag active" data-category-id="0">全部</span>
+        <div id="content-area">
+            <div class="article-grid" id="article-list">
                 </div>
-            </header>
-            <div class="main-scroll" id="content-container">
-                <div style="text-align: center; color: #9ca3af; margin-top: 50px;">正在加载数据...</div>
-            </div>
-        </main>
+        </div>
+    </div>
 
-        <aside class="ai-panel" id="ai-panel">
-            <div class="ai-header">
-                <span>🤖 Dify 智能助手</span>
-                <button class="collapse-btn" id="ai-collapse" onclick="toggleAiPanel()">‹</button>
-            </div>
-            <div class="chat-box" id="chat-box">
-                <div class="msg ai">你好！我是你的专属学习助手，有什么专业问题都可以问我哦，或者点击左侧文章让我帮你总结。</div>
-            </div>
-            <div class="ai-input-area">
-                <textarea id="ai-input" placeholder="输入问题，按回车发送..."></textarea>
-                <button class="btn" onclick="sendChatMessage()">发送请求</button>
-            </div>
-        </aside>
-        <div class="ai-placeholder" id="ai-placeholder" onclick="toggleAiPanel()">›</div>
+    <div id="ai-toggle-btn" onclick="toggleAIPanel()" title="唤醒 Dify 助手">
+        🤖
+    </div>
+
+    <div id="ai-panel" style="display: none;">
+        <div class="ai-header" id="ai-drag-handle">
+            <span>🤖 Dify 智能终端</span>
+            <span class="close-ai-btn" onclick="toggleAIPanel()">✖</span>
+        </div>
+        <div class="ai-chat-box" id="ai-chat-box">
+            <div class="msg-ai">你好！我是你的专属 AI 助手。遇到不懂的知识随时问我，或者直接让我总结文章哦～</div>
+        </div>
+        <div class="ai-input-area">
+            <input type="text" id="ai-input" placeholder="输入你想问的问题...">
+            <button onclick="sendChatMessage()">发送</button>
+        </div>
     </div>
 
     <script src="../js/app.js"></script>

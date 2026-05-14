@@ -83,42 +83,28 @@ function toggleAuthMode() {
     document.getElementById('confirm-password').value = '';
 }
 
+// =========== 替换 app.js 中的这三个函数 ===========
+
 async function handleAuth() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
     const confirmPassword = document.getElementById('confirm-password').value.trim();
 
     clearAllFieldErrors();
-
     let isValid = true;
 
-    if (!username) {
-        showFieldError('username', '请输入用户名');
-        isValid = false;
-    } else if (username.length < 3 || username.length > 20) {
-        showFieldError('username', '用户名长度需在3-20位之间');
-        isValid = false;
-    }
+    if (!username) { showFieldError('username', '请输入用户名'); isValid = false; }
+    else if (username.length < 3 || username.length > 20) { showFieldError('username', '长度需在3-20位之间'); isValid = false; }
 
-    if (!password) {
-        showFieldError('password', '请输入密码');
-        isValid = false;
-    } else {
+    if (!password) { showFieldError('password', '请输入密码'); isValid = false; }
+    else {
         const pwdError = validatePassword(password);
-        if (pwdError) {
-            showFieldError('password', pwdError);
-            isValid = false;
-        }
+        if (pwdError) { showFieldError('password', pwdError); isValid = false; }
     }
 
     if (!isLoginMode) {
-        if (!confirmPassword) {
-            showFieldError('confirm-password', '请输入确认密码');
-            isValid = false;
-        } else if (password !== confirmPassword) {
-            showFieldError('confirm-password', '两次输入的密码不一致');
-            isValid = false;
-        }
+        if (!confirmPassword) { showFieldError('confirm-password', '请输入确认密码'); isValid = false; }
+        else if (password !== confirmPassword) { showFieldError('confirm-password', '两次输入的密码不一致'); isValid = false; }
     }
 
     if (!isValid) return;
@@ -134,35 +120,52 @@ async function handleAuth() {
         if (isLoginMode) {
             localStorage.setItem('token', res.data.access_token);
             localStorage.setItem('username', username);
-            showToast("登录成功！");
-            checkAuthAndInit();
+            showToast("登录成功！即将进入系统...");
+
+            // 🔥 真正的跳转重定向在这里！！！
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800); // 延迟0.8秒跳转，让用户看清“登录成功”的提示
+
         } else {
-            showToast("注册成功，请登录");
-            toggleAuthMode();
+            showToast("注册成功，快去登录吧！");
+            setTimeout(() => { toggleAuthMode(); }, 1000);
         }
+    }
+}
+
+function checkAuthAndInit() {
+    const token = localStorage.getItem('token');
+    // 判断当前所在的是不是登录页
+    const isLoginPage = window.location.pathname.includes('login.html');
+
+    if (token) {
+        if (isLoginPage) {
+            // 如果已经登录了，但用户非要访问 login.html，直接强制把他踢回主页！
+            window.location.href = 'index.html';
+        } else {
+            // 正常在主页，加载数据
+            // 注意：因为去掉了 main-view 的隐藏逻辑，这里不用写 display='flex' 了
+            document.getElementById('current-username').innerText = localStorage.getItem('username');
+            loadCategories();
+            loadArticles();
+        }
+    } else {
+        if (!isLoginPage) {
+            // 如果没登录，却想偷偷访问 index.html 主页，直接重定向回登录页！
+            window.location.href = 'login.html';
+        }
+        // 如果没登录且在 login.html，那就乖乖待着让用户输入账号密码
     }
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    document.getElementById('auth-view').style.display = 'flex';
-    document.getElementById('main-view').style.display = 'none';
+    // 🔥 退出时也是真正的跳转！
+    window.location.href = 'login.html';
 }
-
-function checkAuthAndInit() {
-    const token = localStorage.getItem('token');
-    if (token) {
-        document.getElementById('auth-view').style.display = 'none';
-        document.getElementById('main-view').style.display = 'flex';
-        document.getElementById('current-username').innerText = localStorage.getItem('username');
-        loadCategories();
-        loadArticles();
-    } else {
-        document.getElementById('auth-view').style.display = 'flex';
-        document.getElementById('main-view').style.display = 'none';
-    }
-}
+// =================================================
 
 function toggleSidebar() {
     sidebarCollapsed = !sidebarCollapsed;
