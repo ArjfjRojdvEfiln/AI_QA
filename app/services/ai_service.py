@@ -10,24 +10,30 @@ def get_dify_headers(api_key=None):
         "Content-Type": "application/json"
     }
 
+
 async def get_article_content(db, document_id: str):
     """
     根据文章ID从数据库获取文章内容
     """
     from app.models.knowledge import Knowledge
     from sqlalchemy import select
-    
+
     try:
+        if not document_id or document_id.lower() == 'null':
+            print(f"无效的文档ID: {document_id}")
+            return None
+
         article_id = int(document_id)
         result = await db.execute(select(Knowledge).where(Knowledge.id == article_id))
         article = result.scalars().first()
-        
+
         if article:
             return f"文章标题：{article.title}\n\n文章内容：{article.content}"
         return None
     except Exception as e:
         print(f"获取文章内容失败: {e}")
         return None
+
 
 async def summarize_content(content: str, user_id: str, api_key: str = None) -> str:
     """
